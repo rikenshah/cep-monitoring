@@ -80,6 +80,8 @@ public class CEPMonitoring {
 
         // Warning pattern: Two consecutive temperature events whose temperature is higher than the given threshold
         // appearing within a time interval of 10 seconds
+        
+        /* Remove The comments
         Pattern<MonitoringEvent, ?> warningPattern = Pattern.<MonitoringEvent>begin("first")
                 .subtype(TemperatureEvent.class)
                 .where(new IterativeCondition<TemperatureEvent>() {
@@ -102,6 +104,8 @@ public class CEPMonitoring {
                 })
                 .within(Time.seconds(10));
 
+        */
+        
         // Create a pattern stream from our warning pattern
         PatternStream<MonitoringEvent> tempPatternStream = CEP.pattern(
                 inputEventStream.keyBy("rackID"),
@@ -110,18 +114,21 @@ public class CEPMonitoring {
         // Generate temperature warnings for each matched warning pattern
         DataStream<TemperatureWarning> warnings = tempPatternStream.select(
             (Map<String, List<MonitoringEvent>> pattern) -> {
-                TemperatureEvent first = (TemperatureEvent) pattern.get("first").get(0);
-                TemperatureEvent second = (TemperatureEvent) pattern.get("second").get(0);
+                // Uncomment Following Code
+                //TemperatureEvent first = (TemperatureEvent) pattern.get("first").get(0);
+                //TemperatureEvent second = (TemperatureEvent) pattern.get("second").get(0);
 
                 return new TemperatureWarning(first.getRackID(), (first.getTemperature() + second.getTemperature()) / 2);
             }
         );
 
         // Alert pattern: Two consecutive temperature warnings appearing within a time interval of 20 seconds
+        /* Remove comments
         Pattern<TemperatureWarning, ?> alertPattern = Pattern.<TemperatureWarning>begin("first")
                 .next("second")
                 .within(Time.seconds(20));
-
+        */
+        
         // Create a pattern stream from our alert pattern
         PatternStream<TemperatureWarning> alertPatternStream = CEP.pattern(
                 warnings.keyBy("rackID"),
@@ -131,8 +138,9 @@ public class CEPMonitoring {
         // first warning's temperature
         DataStream<TemperatureAlert> alerts = alertPatternStream.flatSelect(
             (Map<String, List<TemperatureWarning>> pattern, Collector<TemperatureAlert> out) -> {
-                TemperatureWarning first = pattern.get("first").get(0);
-                TemperatureWarning second = pattern.get("second").get(0);
+                // Uncomment Following two lines
+                // TemperatureWarning first = pattern.get("first").get(0);
+                // TemperatureWarning second = pattern.get("second").get(0);
 
                 if (first.getAverageTemperature() < second.getAverageTemperature()) {
                     out.collect(new TemperatureAlert(first.getRackID()));
